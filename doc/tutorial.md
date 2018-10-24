@@ -640,7 +640,7 @@ seastar::future<> f() {
 }
 ```
 
-While `do_with` can the lifetime of the objects it holds, if the user accidentally makes copies of these objects, these copies might have the wrong lifetime. Unfortunately, a simple typo like forgetting an "&" can cause such accidental copies. For example, the following code is broken:
+While `do_with` can extend the lifetime of the objects it holds, if the user accidentally makes copies of these objects, these copies might have the wrong lifetime. Unfortunately, a simple typo like forgetting an "&" can cause such accidental copies. For example, the following code is broken:
 ```cpp
 seastar::future<> f() {
     return seastar::do_with(T(), [] (T obj) { // WRONG: should be T&, not T
@@ -734,7 +734,7 @@ These fibers are not threads - each is just a string of continuations - but they
 
 TODO: Mention fiber-related sections like loops, semaphores, gates, pipes, etc.
 # Loops
-TODO: do_until, repear and friends; parallel_for_each and friends; Use boost::counting_iterator for integers. map_reduce, as a shortcut (?) for parallel_for_each which needs to produce some results (e.g., logical_or of boolean results), so we don't need to create a lw_shared_ptr explicitly (or do_with).
+TODO: do_until, repeat and friends; parallel_for_each and friends; Use boost::counting_iterator for integers. map_reduce, as a shortcut (?) for parallel_for_each which needs to produce some results (e.g., logical_or of boolean results), so we don't need to create a lw_shared_ptr explicitly (or do_with).
 
 TODO: See seastar commit "input_stream: Fix possible infinite recursion in consume()" for an example on why recursion is a possible, but bad, replacement for repeat(). See also my comment on https://groups.google.com/d/msg/seastar-dev/CUkLVBwva3Y/3DKGw-9aAQAJ on why Seastar's iteration primitives should be used over tail call optimization.
 # when_all: Waiting for multiple futures
@@ -767,9 +767,9 @@ future<> f() {
     return when_all(sleep(1s), std::move(slow_two),
                     make_ready_future<double>(3.5)
            ).then([] (auto tup) {
-            std::cout << std::get<0>(tup).available() << "\n";
-            std::cout << std::get<1>(tup).get0() << "\n";
-            std::cout << std::get<2>(tup).get0() << "\n";
+            std::cout << std::get<0>(tup).available() << ", "
+                      << std::get<1>(tup).get0() << ", "
+                      << std::get<2>(tup).get0() << "\n";
     });
 }
 ```
@@ -1559,8 +1559,15 @@ In the current implementation, both `make_exception_future_with_backtrace` and `
 
 
 ## Debugging with gdb
+
+Add following to .gdbinit:
+
+```
 handle SIGUSR1 pass noprint
 handle SIGALRM pass noprint
+```
+
+Also it could be necessary to handle SIG34 as well.
 
 # Promise objects
 
